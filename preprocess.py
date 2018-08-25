@@ -67,16 +67,16 @@ with h5py.File(args.output, 'w') as hf:
     hf.create_dataset('y_test',  data=y_test)
 
     #use tokenizer to build vocab
-    tokenizer1 = Tokenizer(num_words=args.max_num_words)
-    tokenizer1.fit_on_texts(df.text)
-    vocab = tokenizer1.word_index
+    tokenizer = Tokenizer(num_words=args.max_num_words)
+    tokenizer.fit_on_texts(df.text)
+    vocab = tokenizer.word_index
     print('tokenizer fit_on_texts done')
 
-    x_train_word_ids = tokenizer1.texts_to_sequences(x_train)
+    x_train_word_ids = tokenizer.texts_to_sequences(x_train)
     print('x_train_word_ids texts_to_sequences done')
-    x_test_word_ids = tokenizer1.texts_to_sequences(x_test)
+    x_test_word_ids = tokenizer.texts_to_sequences(x_test)
     print('x_test_word_ids texts_to_sequences done')
-    x_val_word_ids = tokenizer1.texts_to_sequences(x_val)
+    x_val_word_ids = tokenizer.texts_to_sequences(x_val)
     print('x_val_word_ids texts_to_sequences done')
 
     #pad sequences into the same length

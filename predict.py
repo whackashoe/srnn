@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='')
 parser.add_argument('--model', type=str, required=True, help='')
 parser.add_argument('--max_num_words', type=int, default=30000, help='')
 parser.add_argument('--max_len', type=int, default=512, help='')
-parser.add_argument('--text', type=str, required=True)
+parser.add_argument('--text', type=str, required=True, help='filename or - for stdin')
 args = parser.parse_args()
 
 text = ""
@@ -36,11 +36,11 @@ from util import seqs_split
 model = load_model(args.model)
 
 
-tokenizer1 = Tokenizer(num_words=args.max_num_words)
-tokenizer1.fit_on_texts([text])
-vocab = tokenizer1.word_index
+tokenizer = Tokenizer(num_words=args.max_num_words)
+tokenizer.fit_on_texts([text])
+vocab = tokenizer.word_index
 
-word_ids = tokenizer1.texts_to_sequences([text])
+word_ids = tokenizer.texts_to_sequences([text])
 padded_seqs = pad_sequences(word_ids, maxlen=args.max_len)
 padded_seqs_split = seqs_split(padded_seqs)
 
