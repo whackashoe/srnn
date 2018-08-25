@@ -2,7 +2,7 @@
 
 '''
 Author: Zeping Yu
-Sliced Recurrent Neural Network (SRNN). 
+Sliced Recurrent Neural Network (SRNN).
 SRNN is able to get much faster speed than standard RNN by slicing the sequences into many subsequences.
 This work is accepted by COLING 2018.
 The code is written in keras, using tensorflow backend. We implement the SRNN(8,2) here, and Yelp 2013 dataset is used.
@@ -15,6 +15,8 @@ import argparse
 import pandas as pd
 import numpy as np
 import h5py
+
+from util import seqs_split
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('--csv', type=str, required=True, help='')
@@ -85,37 +87,15 @@ with h5py.File(args.output, 'w') as hf:
     x_val_padded_seqs = pad_sequences(x_val_word_ids, maxlen=args.max_len)
     print('x_val_padded_seqs pad_sequences done')
 
-    #slice sequences into many subsequences
-    x_test_padded_seqs_split=[]
-    for i in range(x_test_padded_seqs.shape[0]):
-        split1=np.split(x_test_padded_seqs[i],8)
-        a=[]
-        for j in range(8):
-            s=np.split(split1[j],8)
-            a.append(s)
-        x_test_padded_seqs_split.append(a)
+    x_test_padded_seqs_split = seqs_split(x_test_padded_seqs)
     hf.create_dataset('x_test_padded_seqs_split', data=x_test_padded_seqs_split)
     print('x_test_padded_seqs_split done')
 
-    x_val_padded_seqs_split=[]
-    for i in range(x_val_padded_seqs.shape[0]):
-        split1=np.split(x_val_padded_seqs[i],8)
-        a=[]
-        for j in range(8):
-            s=np.split(split1[j],8)
-            a.append(s)
-        x_val_padded_seqs_split.append(a)
+    x_val_padded_seqs_split = seqs_split(x_val_padded_seqs_split)
     hf.create_dataset('x_val_padded_seqs_split', data=x_val_padded_seqs_split)
     print('x_val_padded_seqs_split done')
-       
-    x_train_padded_seqs_split=[]
-    for i in range(x_train_padded_seqs.shape[0]):
-        split1=np.split(x_train_padded_seqs[i],8)
-        a=[]
-        for j in range(8):
-            s=np.split(split1[j],8)
-            a.append(s)
-        x_train_padded_seqs_split.append(a)
+
+    x_train_padded_seqs_split = seqs_split(x_train_padded_seqs_split)
     hf.create_dataset('x_train_padded_seqs_split', data=x_train_padded_seqs_split)
     print('x_train_padded_seqs_split done')
 
@@ -129,7 +109,7 @@ with h5py.File(args.output, 'w') as hf:
         embeddings_index[word] = coefs
     f.close()
     print('Found %s word vectors.' % len(embeddings_index))
-    
+
     #use pre-trained GloVe word embeddings to initialize the embedding layer
     embedding_matrix = np.random.random((args.max_num_words + 1, args.embedding_dim))
     for word, i in vocab.items():
@@ -139,4 +119,4 @@ with h5py.File(args.output, 'w') as hf:
                 # words not found in embedding index will be random initialized.
                 embedding_matrix[i] = embedding_vector
 
-    hf.create_dataset('embedding_matrix', data=embedding_matrix) 
+    hf.create_dataset('embedding_matrix', data=embedding_matrix)

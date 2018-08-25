@@ -9,7 +9,7 @@ import time
 
 from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras.models import Model
-from keras.layers import Input, Embedding, GRU, TimeDistributed, Dense
+from keras.layers import Input, Embedding, GRU, TimeDistributed, Bidirectional, Dense
 from keras.models import load_model
 from keras.optimizers import Adam
 from tensorboard_batch_monitor import TensorBoardBatchMonitor
@@ -26,6 +26,7 @@ parser.add_argument('--epochs', type=int, default=10, help='')
 parser.add_argument('--recurrent_activation', type=str, default='sigmoid', help='')
 args = parser.parse_args()
 
+
 with h5py.File(args.dataset, 'r') as hf:
     embedding_layer = Embedding(input_dim=args.max_num_words + 1,
                                 output_dim=args.embedding_dim,
@@ -33,6 +34,8 @@ with h5py.File(args.dataset, 'r') as hf:
                                 input_length=args.max_len//64,
                                 trainable=True,
                                 name='embedding')
+    print(np.array(hf['x_test_padded_seqs_split'][:]))
+    sys.exit(0)
 
     print("Build Model")
 
@@ -99,9 +102,9 @@ with h5py.File(args.dataset, 'r') as hf:
     )
     tensorboard.set_model(model)
 
-    callbacks=[checkpoint, tensorboard] 
-                 
-    model.fit(np.array(hf['x_train_padded_seqs_split'][:]), hf['y_train'][:], 
+    callbacks=[checkpoint, tensorboard]
+
+    model.fit(np.array(hf['x_train_padded_seqs_split'][:]), hf['y_train'][:],
               validation_data = (np.array(hf['x_val_padded_seqs_split'][:]), hf['y_val'][:]),
               epochs     = args.epochs,
               batch_size = args.batch_size,
@@ -109,5 +112,9 @@ with h5py.File(args.dataset, 'r') as hf:
               verbose    = 1)
 
     #use the best model to evaluate on test set
-    best_model = load_model(bestmodel_path)          
-    print(best_model.evaluate(np.array(x_test_padded_seqs_split), y_test,batch_size=args.batch_size))
+    best_model = load_model(bestmodel_path)
+    print(best_model.evaluate(
+        np.array(hf['x_test_padded_seqs_split'][:]),
+        hf['y_test'][:],
+        batch_size=args.batch_size
+    ))
