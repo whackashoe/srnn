@@ -13,7 +13,6 @@ import sys
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('--model', type=str, required=True, help='')
 parser.add_argument('--max_num_words', type=int, default=30000, help='')
-parser.add_argument('--max_len', type=int, default=512, help='')
 parser.add_argument('--text', type=str, required=True, help='filename or - for stdin')
 args = parser.parse_args()
 
@@ -34,15 +33,16 @@ from keras.models import load_model
 from util import seqs_split
 
 model = load_model(args.model)
-
+slice_width = model.layers[0].get_output_at(0).get_shape().as_list()[-1]
+max_len = (slice_width**3)
 
 tokenizer = Tokenizer(num_words=args.max_num_words)
 tokenizer.fit_on_texts([text])
 vocab = tokenizer.word_index
 
 word_ids = tokenizer.texts_to_sequences([text])
-padded_seqs = pad_sequences(word_ids, maxlen=args.max_len)
-padded_seqs_split = seqs_split(padded_seqs)
+padded_seqs = pad_sequences(word_ids, maxlen=max_len)
+padded_seqs_split = seqs_split(padded_seqs, slice_width)
 
 pred = model.predict([padded_seqs_split], verbose=False)[0]
 print(pred)

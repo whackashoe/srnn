@@ -21,8 +21,9 @@ from util import seqs_split
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('--csv', type=str, required=True, help='')
 parser.add_argument('--output', type=str, required=True, help='')
-parser.add_argument('--glove_path', type=str, default='glove.6B.100d.txt', help='')
+parser.add_argument('--glove_path', type=str, default='glove/glove.6B.200d.txt', help='')
 parser.add_argument('--max_num_words', type=int, default=30000, help='')
+parser.add_argument('--slice_width', type=int, default=8, help='')
 parser.add_argument('--validation_split', type=float, default=0.1, help='')
 parser.add_argument('--test_split', type=float, default=0.1, help='')
 parser.add_argument('--max_len', type=int, default=512, help='')
@@ -87,15 +88,15 @@ with h5py.File(args.output, 'w') as hf:
     x_val_padded_seqs = pad_sequences(x_val_word_ids, maxlen=args.max_len)
     print('x_val_padded_seqs pad_sequences done')
 
-    x_test_padded_seqs_split = seqs_split(x_test_padded_seqs)
+    x_test_padded_seqs_split = seqs_split(x_test_padded_seqs, args.slice_width)
     hf.create_dataset('x_test_padded_seqs_split', data=x_test_padded_seqs_split)
     print('x_test_padded_seqs_split done')
 
-    x_val_padded_seqs_split = seqs_split(x_val_padded_seqs_split)
+    x_val_padded_seqs_split = seqs_split(x_val_padded_seqs, args.slice_width)
     hf.create_dataset('x_val_padded_seqs_split', data=x_val_padded_seqs_split)
     print('x_val_padded_seqs_split done')
 
-    x_train_padded_seqs_split = seqs_split(x_train_padded_seqs_split)
+    x_train_padded_seqs_split = seqs_split(x_train_padded_seqs, args.slice_width)
     hf.create_dataset('x_train_padded_seqs_split', data=x_train_padded_seqs_split)
     print('x_train_padded_seqs_split done')
 
