@@ -186,7 +186,7 @@ with h5py.File(args.dataset, 'r') as hf:
               validation_data = (np.array(hf['x_val_padded_seqs_split'][:]), hf['y_val'][:]),
               epochs     = args.epochs,
               batch_size = args.batch_size,
-              callbacks  = [checkpoint, tensorboard],
+              callbacks  = callbacks,
               verbose    = 1)
 
     #use the best model to evaluate on test set
