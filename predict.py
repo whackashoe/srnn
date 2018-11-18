@@ -21,7 +21,7 @@ from keras.models import load_model
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('--model', type=str, required=True, help='')
 parser.add_argument('--vocab', type=str, required=True, help='')
-parser.add_argument('--text', type=str, required=True, help='filename or - for stdin')
+parser.add_argument('--text', type=str, default=' ', required=False, help='filename or - for stdin')
 parser.add_argument('--temperature', type=float, default=0.05)
 parser.add_argument('--length', type=int, default=500)
 args = parser.parse_args()
@@ -29,22 +29,26 @@ args = parser.parse_args()
 with open(args.vocab, 'rb') as t_handle:
     tokenizer = pickle.load(t_handle)
 
+
 rev_word_map = dict(map(reversed, tokenizer.word_index.items()))
 model = load_model(args.model)
-n_vocab = model.layers[3].get_output_at(0).get_shape().as_list()[-1]
+slice_width = model.layers[0].get_output_at(0).get_shape().as_list()[-1]
+n_vocab     = model.layers[3].get_output_at(0).get_shape().as_list()[-1]
 assert n_vocab == len(rev_word_map), "vocab size different than trained vocab"
 max_len = model.layers[0].get_output_at(0).get_shape().as_list()[-1] ** 3
+assert slice_width**3 == max_len, "slice-width^3 must equal length of sequences"
 
 
 def slice_seq(padded_seqs):
     ret = []
 
+    W = slice_width
     split = np.split
     for i in range(padded_seqs.shape[0]):
-        S = split(padded_seqs[i], 8)
+        S = split(padded_seqs[i], W)
         a = []
-        for j in range(8):
-            a.append(split(S[j], 8))
+        for j in range(W):
+            a.append(split(S[j], W))
 
         ret.append(a)
 

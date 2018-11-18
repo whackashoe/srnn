@@ -35,13 +35,13 @@ parser.add_argument('--input', type=str, nargs='+', required=True, help='')
 parser.add_argument('--output', type=str, required=False, help='')
 parser.add_argument('--vocab', type=str, required=False, help='')
 
-parser.add_argument('--max_len', type=int, default=512, help='')
+parser.add_argument('--max-len', type=int, default=512, help='')
+parser.add_argument('--slice-width', type=int, default=8, help='')
 parser.add_argument('--embedding-dim', type=int, default=512, help='')
 parser.add_argument('--num-filters', type=int, default=1024, help='')
 
 parser.add_argument('--validation-split', type=float, default=0.1, help='')
-
-parser.add_argument('--slice-width', type=int, default=8, help='')
+parser.add_argument('--skip-len', type=int, default=1, help='')
 parser.add_argument('--batch-size', type=int, default=100, help='')
 parser.add_argument('--epochs', type=int, default=1, help='')
 
@@ -54,6 +54,9 @@ parser.add_argument('--beta_2', type=float, default=0.999, help='')
 parser.add_argument('--epsilon', type=float, default=1e-08, help='')
 args = parser.parse_args()
 
+slice_width = args.slice_width
+
+assert slice_width**3 == args.max_len, "slice-width^3 must equal length of sequences"
 
 
 #use tokenizer to build vocab
@@ -105,17 +108,17 @@ def selected_gate(embed):
     return gate
 
 
-input1   = Input(shape=(args.max_len//64,), dtype='int32')
+input1   = Input(shape=(args.max_len//(slice_width**2),), dtype='int32')
 embed1   = embedding_layer(input1)
 gru1     = selected_gate(embed1)
 encoder1 = Model(input1, gru1)
 
-input2   = Input(shape=(8, args.max_len//64,), dtype='int32')
+input2   = Input(shape=(slice_width, args.max_len//(slice_width**2),), dtype='int32')
 embed2   = TimeDistributed(encoder1)(input2)
 gru2     = selected_gate(embed2)
 encoder2 = Model(input2,gru2)
 
-input3 = Input(shape=(8, 8, args.max_len//64), dtype='int32')
+input3 = Input(shape=(slice_width, slice_width, args.max_len//(slice_width**2)), dtype='int32')
 embed3 = TimeDistributed(encoder2)(input3)
 gru3   = selected_gate(embed3)
 
@@ -138,7 +141,7 @@ model.compile(
 
 
 for in_file in tqdm(args.input):
-    for in_offset in tqdm(range(args.max_len)):
+    for in_offset in tqdm(range(0, args.max_len, args.skip_len)):
         print('Processing {} {}/{}'.format(in_file, in_offset, args.max_len))
 
         raw_text = open(in_file).read().lower()[in_offset:]
@@ -185,14 +188,15 @@ for in_file in tqdm(args.input):
         #slice sequences into many subsequences
         def slice_seq(progress_prefix, padded_seqs):
             ret = []
+            W = slice_width
             split = np.split
             for i in tqdm(range(padded_seqs.shape[0]), desc=progress_prefix):
                 #python3 sucks and makes map slow since we need to convert back to list
                 #ret.append([*map(lambda v: split(v, 8), split(padded_seqs[i], 8))]) 
-                S = split(padded_seqs[i], 8)
+                S = split(padded_seqs[i], W)
                 a = []
-                for j in range(8):
-                    a.append(split(S[j], 8))
+                for j in range(slice_width):
+                    a.append(split(S[j], W))
                 ret.append(a)
             return ret
 
