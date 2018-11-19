@@ -24,13 +24,14 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # try --help on these scripts to see different options
-python preprocess.py --csv yelp_2013.csv --output dataset.h5
-python train.py --dataset dataset.h5
+./generate_tokens.py --input datasets/tinyshakespeare/input.txt
+./train.py --input datasets/tinyshakespeare/input.txt --vocab datasets/tinyshakespeare/input.txt.pickle
 
 # view training with tensorboard
 tensorboard --logdir logs/
 
-# pass either - for stdin or a filename to text to predict
-echo "really really good" | ./predict.py --model save_model/2018-08-24-14-57-21.h5 --text -
+# generate text from trained model
+./predict.py --model datasets/tinyshakespeare/input.txt.h5 --vocab datasets/tinyshakespeare/input.txt.pickle
 ```
+
 
